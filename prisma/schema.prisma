@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  follows       UserFollow[]
+  savedPapers   SavedPaper[]
+  notifications Notification[]
+  digests       ResearchDigest[]
+  reviews       ResearchReview[]
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  paperCount  Int      @default(0)
+  velocity    Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  papers        PaperTopic[]
+  followers     UserFollow[]
+  trendSignals  TrendSignal[]
+  clusters      TopicCluster[]
+  digests       ResearchDigest[]
+}
+
+model Author {
+  id             String   @id @default(cuid())
+  openAlexId     String?  @unique
+  name           String
+  affiliations   String[]
+  hIndex         Int?
+  citationCount  Int?
+  paperCount     Int?
+  profileImageUrl String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  papers    PaperAuthor[]
+  followers UserFollow[]
+}
+
+model Institution {
+  id          String   @id @default(cuid())
+  openAlexId  String?  @unique
+  name        String
+  country     String?
+  type        String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  papers PaperInstitution[]
+}
+
+model Paper {
+  id              String   @id @default(cuid())
+  openAlexId      String?  @unique
+  doi             String?  @unique
+  title           String
+  abstract        String?
+  publishedDate   DateTime?
+  venue           String?
+  volume          String?
+  issue           String?
+  pages           String?
+  citationCount   Int      @default(0)
+  pdfUrl          String?
+  sourceUrl       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  authors       PaperAuthor[]
+  topics        PaperTopic[]
+  institutions  PaperInstitution[]
+  citations     Citation[]       @relation("CitingPaper")
+  citedBy       Citation[]       @relation("CitedPaper")
+  summary       PaperSummary?
+  savedBy       SavedPaper[]
+}
+
+model PaperAuthor {
+  paperId  String
+  authorId String
+  position Int      @default(0)
+
+  paper  Paper  @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@id([paperId, authorId])
+}
+
+model PaperTopic {
+  paperId String
+  topicId String
+  score   Float  @default(0)
+
+  paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([paperId, topicId])
+}
+
+model PaperInstitution {
+  paperId       String
+  institutionId String
+
+  paper       Paper       @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+
+  @@id([paperId, institutionId])
+}
+
+model Citation {
+  citingPaperId String
+  citedPaperId  String
+
+  citingPaper Paper @relation("CitingPaper", fields: [citingPaperId], references: [id], onDelete: Cascade)
+  citedPaper  Paper @relation("CitedPaper", fields: [citedPaperId], references: [id], onDelete: Cascade)
+
+  @@id([citingPaperId, citedPaperId])
+}
+
+model PaperSummary {
+  id                String  @id @default(cuid())
+  paperId           String  @unique
+  oneSentence       String?
+  executive         String?
+  technical         String?
+  contributions     String[]
+  limitations       String[]
+  futureWork        String[]
+  practicalImpact   String?
+  relationToLit     String?
+
+  paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ResearchDigest {
+  id        String   @id @default(cuid())
+  userId    String
+  topicId   String?
+  title     String
+  content   String
+  period    String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic Topic? @relation(fields: [topicId], references: [id])
+}
+
+model TrendSignal {
+  id              String   @id @default(cuid())
+  topicId         String?
+  name            String
+  description     String?
+  trendType       String
+  confidenceScore Float    @default(0)
+  momentumScore   Float    @default(0)
+  growthRate      Float    @default(0)
+  evidence        String[]
+  detectedAt      DateTime @default(now())
+
+  topic Topic? @relation(fields: [topicId], references: [id])
+}
+
+model ResearchReview {
+  id              String   @id @default(cuid())
+  userId          String
+  query           String
+  title           String
+  overview        String?
+  keyPapers       String[]
+  researchers     String[]
+  milestones      String[]
+  stateOfArt      String?
+  openProblems    String[]
+  futureDirections String[]
+  status          String   @default("generating")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  topicId   String?
+  authorId  String?
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic  Topic?  @relation(fields: [topicId], references: [id])
+  author Author? @relation(fields: [authorId], references: [id])
+
+  @@unique([userId, topicId])
+  @@unique([userId, authorId])
+}
+
+model SavedPaper {
+  id        String   @id @default(cuid())
+  userId    String
+  paperId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, paperId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String?
+  read      Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TopicCluster {
+  id        String   @id @default(cuid())
+  topicId   String
+  name      String
+  keywords  String[]
+  paperIds  String[]
+  createdAt DateTime @default(now())
+
+  topic Topic @relation(fields: [topicId], references: [id])
+}
+
+model KnowledgeGraphNode {
+  id       String @id @default(cuid())
+  type     String
+  label    String
+  metadata Json?
+
+  outEdges KnowledgeGraphEdge[] @relation("FromNode")
+  inEdges  KnowledgeGraphEdge[] @relation("ToNode")
+}
+
+model KnowledgeGraphEdge {
+  id         String @id @default(cuid())
+  fromNodeId String
+  toNodeId   String
+  relation   String
+  weight     Float  @default(1)
+
+  fromNode KnowledgeGraphNode @relation("FromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNode   KnowledgeGraphNode @relation("ToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
+}
