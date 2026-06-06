@@ -112,7 +112,7 @@ export default function Home() {
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">
           {interests.length > 0
             ? `Papers in ${interests.slice(0, 3).join(", ")}${interests.length > 3 ? ` +${interests.length - 3} more` : ""} — last month, sorted by early citations`
-            : "Top papers from the last month, ranked by citations and institutional prestige"}
+            : "Top papers from the last month"}
         </p>
         {!user && (
           <Link
