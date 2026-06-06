@@ -1,6 +1,6 @@
 # Thesis
 
-A scientific research intelligence platform that helps researchers stay current with the latest publications in their fields. Thesis provides personalized feeds, impact-ranked papers, author tracking, and trend detection — powered by real data from [OpenAlex](https://openalex.org).
+A research platform that helps researchers, especially targeting student researchers who might what to learn about latest research in their areas of interest. Thesis provides personalized feeds, top papers, and trend detection — powered by real data from [OpenAlex](https://openalex.org).
 
 ## Features
 
@@ -111,7 +111,3 @@ All research data is fetched live from [OpenAlex](https://openalex.org), a fully
 - 250M+ scholarly works
 - 90M+ authors
 - 100K+ research concepts
-
-## Author
-
-Built by **Himani Musku**
